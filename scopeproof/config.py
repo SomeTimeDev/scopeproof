@@ -44,6 +44,7 @@ class RuleConfig:
     fail_on_duplicate_symbol: bool = False
     fail_on_orphan_new_file: bool = False
     fail_on_public_api_growth: bool = False
+    fail_on_changed_file_growth: bool = False
     require_adr_for_new_module: bool = False
     adr_paths: list[str] = field(default_factory=lambda: ["docs/adr/*.md", "docs/architecture/*.md"])
 
@@ -170,6 +171,12 @@ def load_project_config(path: Path) -> ProjectConfig:
         fail_on_public_api_growth=bool(
             rules_data.get("fail_on_public_api_growth", default_rules.fail_on_public_api_growth)
         ),
+        fail_on_changed_file_growth=bool(
+            rules_data.get(
+                "fail_on_changed_file_growth",
+                default_rules.fail_on_changed_file_growth,
+            )
+        ),
         require_adr_for_new_module=bool(
             rules_data.get("require_adr_for_new_module", default_rules.require_adr_for_new_module)
         ),
@@ -230,4 +237,3 @@ def load_task_config(path: Path, goal_override: str | None = None) -> TaskConfig
         expected_behavior=_list(data, "expected_behavior"),
         verification=_list(data, "verification"),
     )
-

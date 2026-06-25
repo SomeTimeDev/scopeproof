@@ -76,14 +76,32 @@ def parse_name_status(output: str) -> list[ChangedFile]:
     return changed
 
 
-def get_changed_files(base: str, head: str | None, cwd: Path) -> list[ChangedFile]:
+def get_untracked_files(cwd: Path) -> list[ChangedFile]:
+    completed = _run_git(["ls-files", "--others", "--exclude-standard"], cwd)
+    return [
+        ChangedFile(path=normalize_path(line), status="A")
+        for line in completed.stdout.splitlines()
+        if line.strip()
+    ]
+
+
+def get_changed_files(
+    base: str,
+    head: str | None,
+    cwd: Path,
+    include_untracked: bool = True,
+) -> list[ChangedFile]:
     args = ["diff", "--name-status", "--find-renames"]
     if head:
         args.append(f"{base}...{head}")
     else:
         args.append(base)
     completed = _run_git(args, cwd)
-    return parse_name_status(completed.stdout)
+    changed = parse_name_status(completed.stdout)
+    if include_untracked:
+        seen = {item.path for item in changed}
+        changed.extend(item for item in get_untracked_files(cwd) if item.path not in seen)
+    return changed
 
 
 def get_file_at_ref(path: str, ref: str, cwd: Path) -> str | None:

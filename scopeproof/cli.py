@@ -31,11 +31,33 @@ def _template_text(name: str) -> str:
     return files("scopeproof.templates").joinpath(name).read_text(encoding="utf-8")
 
 
+def _strict_scopeproof_template() -> str:
+    replacements = {
+        "fail_on_module_sprawl: false": "fail_on_module_sprawl: true",
+        "fail_on_duplicate_symbol: false": "fail_on_duplicate_symbol: true",
+        "fail_on_orphan_new_file: false": "fail_on_orphan_new_file: true",
+        "fail_on_public_api_growth: false": "fail_on_public_api_growth: true",
+        "fail_on_changed_file_growth: false": "fail_on_changed_file_growth: true",
+    }
+    rendered = _template_text("scopeproof.yml")
+    for old, new in replacements.items():
+        rendered = rendered.replace(old, new)
+    return rendered
+
+
 def _write_template(path: Path, template_name: str, force: bool) -> bool:
     if path.exists() and not force:
         return False
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_template_text(template_name), encoding="utf-8")
+    return True
+
+
+def _write_text(path: Path, content: str, force: bool) -> bool:
+    if path.exists() and not force:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
     return True
 
 
@@ -66,19 +88,30 @@ def init_command(
         bool,
         typer.Option("--with-agents", help="Also create AGENTS.md when missing."),
     ] = False,
+    strict: Annotated[
+        bool,
+        typer.Option("--strict", help="Generate config with stricter fail-on rules."),
+    ] = False,
 ) -> None:
     """Create starter ScopeProof config files."""
     root = Path.cwd()
     created = []
     skipped = []
-    for target, template in [
-        (root / "scopeproof.yml", "scopeproof.yml"),
-        (root / ".scopeproof" / "task.yml", "task.yml"),
-    ]:
-        if _write_template(target, template, force):
-            created.append(str(target.relative_to(root)))
-        else:
-            skipped.append(str(target.relative_to(root)))
+    scopeproof_target = root / "scopeproof.yml"
+    if _write_text(
+        scopeproof_target,
+        _strict_scopeproof_template() if strict else _template_text("scopeproof.yml"),
+        force,
+    ):
+        created.append(str(scopeproof_target.relative_to(root)))
+    else:
+        skipped.append(str(scopeproof_target.relative_to(root)))
+
+    task_target = root / ".scopeproof" / "task.yml"
+    if _write_template(task_target, "task.yml", force):
+        created.append(str(task_target.relative_to(root)))
+    else:
+        skipped.append(str(task_target.relative_to(root)))
     if with_agents:
         target = root / "AGENTS.md"
         if _write_template(target, "AGENTS.md", force):
@@ -239,4 +272,3 @@ def check_command(
     if report.overall_status == FAIL or (fail_on_warn and report.overall_status == WARN):
         raise typer.Exit(1)
     raise typer.Exit(0)
-

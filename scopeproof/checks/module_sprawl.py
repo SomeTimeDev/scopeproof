@@ -44,6 +44,15 @@ def _is_suspicious_module(path: str) -> bool:
     return any(word in name for word in SUSPICIOUS_MODULE_WORDS)
 
 
+def _is_modify_only(task: TaskConfig) -> bool:
+    if task.expected_change_type and task.expected_change_type.casefold() in {
+        "modify-only",
+        "modify_only",
+    }:
+        return True
+    return any("modify-only" in item.casefold() for item in task.expected_behavior)
+
+
 def check_module_sprawl(
     changed_files: list[ChangedFile],
     config: ProjectConfig,
@@ -72,12 +81,14 @@ def check_module_sprawl(
         )
 
     matched_points = _matching_extension_points(task.goal, config.extension_points)
+    modify_only = _is_modify_only(task)
     for point in matched_points:
         for changed in production_added:
-            if point.allow_new_files_under and not matches_any(
+            allowed_under_extension = not point.allow_new_files_under or matches_any(
                 changed.path,
                 point.allow_new_files_under,
-            ):
+            )
+            if not allowed_under_extension:
                 issues.append(
                     CheckIssue(
                         severity="WARN",
@@ -96,7 +107,9 @@ def check_module_sprawl(
                         },
                     )
                 )
-            if point.prefer_existing_paths and task.prefer_modify:
+            if point.prefer_existing_paths and task.prefer_modify and (
+                modify_only or not allowed_under_extension
+            ):
                 issues.append(
                     CheckIssue(
                         severity="WARN",
@@ -109,6 +122,7 @@ def check_module_sprawl(
                         evidence={
                             "prefer_existing_paths": point.prefer_existing_paths,
                             "prefer_modify": task.prefer_modify,
+                            "modify_only": modify_only,
                         },
                     )
                 )
@@ -147,4 +161,3 @@ def check_module_sprawl(
         issues=issues,
         fail_enabled=config.rules.fail_on_module_sprawl,
     )
-

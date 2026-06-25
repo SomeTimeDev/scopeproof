@@ -22,14 +22,13 @@ def test_parse_name_status_entries():
 
 
 def test_working_tree_diff_command_construction(monkeypatch, tmp_path):
-    captured = {}
+    captured = []
 
     def fake_run_git(args, cwd):
-        captured["args"] = args
-        captured["cwd"] = cwd
+        captured.append((args, cwd))
 
         class Completed:
-            stdout = "M\tsrc/app.py\n"
+            stdout = "" if args[:2] == ["ls-files", "--others"] else "M\tsrc/app.py\n"
 
         return Completed()
 
@@ -37,6 +36,26 @@ def test_working_tree_diff_command_construction(monkeypatch, tmp_path):
 
     changed = get_changed_files("HEAD", None, tmp_path)
 
-    assert captured["args"] == ["diff", "--name-status", "--find-renames", "HEAD"]
+    assert captured[0][0] == ["diff", "--name-status", "--find-renames", "HEAD"]
     assert changed[0].path == "src/app.py"
 
+
+def test_get_changed_files_includes_untracked_and_deduplicates(monkeypatch, tmp_path):
+    def fake_run_git(args, cwd):
+        class Completed:
+            stdout = (
+                "A\tsrc/new.py\n"
+                if args[0] == "diff"
+                else "src/new.py\nsrc/other.py\n"
+            )
+
+        return Completed()
+
+    monkeypatch.setattr("scopeproof.git._run_git", fake_run_git)
+
+    changed = get_changed_files("HEAD", None, tmp_path)
+
+    assert [(item.status, item.path) for item in changed] == [
+        ("A", "src/new.py"),
+        ("A", "src/other.py"),
+    ]

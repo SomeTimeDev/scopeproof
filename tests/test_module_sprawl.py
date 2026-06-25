@@ -41,3 +41,52 @@ def test_module_sprawl_does_not_flag_support_files():
 
     assert result.status == PASS
 
+
+def test_module_sprawl_allows_new_file_under_matched_extension_path():
+    config = ProjectConfig(
+        rules=RuleConfig(max_new_files_per_task=3, fail_on_module_sprawl=True),
+        extension_points=[
+            ExtensionPoint(
+                name="Exporters",
+                keywords=["export", "csv"],
+                prefer_existing_paths=["src/**/exporters/**"],
+                allow_new_files_under=["src/**/exporters/**", "tests/**"],
+            )
+        ],
+    )
+    task = TaskConfig(goal="Add CSV export support", prefer_modify=["src/demo/exporters/base.py"])
+
+    result = check_module_sprawl(
+        [ChangedFile("src/demo/exporters/csv.py", "A")],
+        config,
+        task,
+    )
+
+    assert result.status == PASS
+
+
+def test_module_sprawl_flags_allowed_new_file_when_task_is_modify_only():
+    config = ProjectConfig(
+        rules=RuleConfig(max_new_files_per_task=3),
+        extension_points=[
+            ExtensionPoint(
+                name="Exporters",
+                keywords=["export", "csv"],
+                prefer_existing_paths=["src/**/exporters/**"],
+                allow_new_files_under=["src/**/exporters/**", "tests/**"],
+            )
+        ],
+    )
+    task = TaskConfig(
+        goal="Add CSV export support",
+        prefer_modify=["src/demo/exporters/base.py"],
+        expected_change_type="modify-only",
+    )
+
+    result = check_module_sprawl(
+        [ChangedFile("src/demo/exporters/csv.py", "A")],
+        config,
+        task,
+    )
+
+    assert result.status == "WARN"

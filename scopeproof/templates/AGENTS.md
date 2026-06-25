@@ -9,7 +9,7 @@ ScopeProof is a tiny deterministic CLI that checks AI-agent-generated diffs for 
 - Do not add LLM calls.
 - Do not add cloud services.
 - Do not build a web UI.
-- Do not expand beyond Python analysis in v0.1.0.
+- Do not expand beyond Python analysis in v0.1.x.
 - Do not add dependencies unless they are listed in the spec.
 
 ## Engineering rules
@@ -32,4 +32,3 @@ scopeproof --help
 scopeproof init --help
 scopeproof check --help
 ```
-

@@ -3,9 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from scopeproof.checks.base import base_symbols_for_changed_files
+from scopeproof.checks.changed_file_growth import check_changed_file_growth
 from scopeproof.checks.duplicate_symbol import check_duplicate_symbol
 from scopeproof.checks.module_sprawl import check_module_sprawl
 from scopeproof.checks.orphan_new_file import check_orphan_new_file
+from scopeproof.checks.parse_error import check_parse_error
 from scopeproof.checks.public_api_growth import check_public_api_growth
 from scopeproof.checks.scope_escape import check_scope_escape
 from scopeproof.config import ProjectConfig, TaskConfig
@@ -38,13 +40,16 @@ def run_checks(
     head: str | None,
 ) -> FullReport:
     changed_files = get_changed_files(base, head, repo_root)
+    parse_result = check_parse_error(changed_files, repo_root)
     current_symbols, imports = index_repo(repo_root, config.paths.include, config.paths.exclude)
     base_sources = _base_sources_for_changed_files(changed_files, base, repo_root)
     base_symbols = base_symbols_for_changed_files(changed_files, base_sources)
 
     results = [
         check_scope_escape(changed_files, config, task),
+        check_changed_file_growth(changed_files, config),
         check_module_sprawl(changed_files, config, task),
+        parse_result,
         check_duplicate_symbol(changed_files, current_symbols, base_symbols, config),
         check_orphan_new_file(
             changed_files,
@@ -64,4 +69,3 @@ def run_checks(
         changed_files=changed_files,
         results=results,
     )
-

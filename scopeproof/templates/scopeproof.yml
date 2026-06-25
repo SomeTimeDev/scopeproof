@@ -32,6 +32,7 @@ rules:
   fail_on_duplicate_symbol: false
   fail_on_orphan_new_file: false
   fail_on_public_api_growth: false
+  fail_on_changed_file_growth: false
   require_adr_for_new_module: false
   adr_paths:
     - "docs/adr/*.md"
@@ -41,4 +42,3 @@ extension_points: []
 
 architecture:
   forbidden_imports: []
-

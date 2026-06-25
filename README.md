@@ -4,7 +4,7 @@ AI coding agents start focused, then drift. ScopeProof keeps their changes insid
 project's scope.
 
 It checks agent-generated diffs for needless modules, duplicate abstractions, scope escape,
-orphan files, and public API growth.
+orphan files, changed-file growth, parse errors, and public API growth.
 
 No LLM required. No cloud. No vendor lock-in.
 
@@ -18,6 +18,8 @@ for catching those signals before merge.
 
 - `scope_escape`: changed files outside task paths or inside forbidden paths
 - `module_sprawl`: too many new files or suspicious new modules
+- `changed_file_growth`: too many changed files for one task
+- `parse_error`: changed Python files that cannot be parsed
 - `duplicate_symbol`: new public symbols that resemble existing symbols
 - `orphan_new_file`: new production Python files that are not imported or tested
 - `public_api_growth`: excessive public class/function growth for one task
@@ -42,6 +44,15 @@ scopeproof prompt "Add CSV export support"
 scopeproof check --base HEAD
 ```
 
+For stricter projects, start with fail-on defaults for every drift check:
+
+```bash
+scopeproof init --strict
+```
+
+Local checks include untracked files by default. A new untracked Python module is treated as an
+added file, so `scopeproof check --base HEAD` catches drift before you remember to run `git add`.
+
 For pull requests:
 
 ```bash
@@ -56,9 +67,11 @@ project:
   name: "demo"
   mission: "CLI for exporting structured data."
 rules:
+  max_changed_files_per_task: 8
   max_new_files_per_task: 1
   duplicate_symbol_similarity: 0.82
   fail_on_module_sprawl: true
+  fail_on_changed_file_growth: false
 extension_points:
   - name: "Exporters"
     keywords: ["export", "csv"]
@@ -130,19 +143,21 @@ jobs:
       - run: scopeproof check --base origin/main --head HEAD --format markdown --output scopeproof-report.md
 ```
 
-ScopeProof does not post PR comments in v0.1.0.
+ScopeProof does not post PR comments in v0.1.1.
 
 ## Philosophy And Limitations
 
 ScopeProof does not prove semantic correctness. It catches deterministic drift signals:
 
 - changed files outside allowed paths
+- too many files changed for one task
+- Python syntax errors in changed files
 - suspicious new modules
 - duplicated-looking symbols
 - orphan new files
 - unexpected public API growth
 
-It only indexes Python with the standard library `ast` module in v0.1.0. Non-Python files can be
+It only indexes Python with the standard library `ast` module in v0.1.1. Non-Python files can be
 checked for path scope, but not for symbol-level behavior.
 
 ## Roadmap
@@ -155,4 +170,3 @@ checked for path scope, but not for symbol-level behavior.
 ## License
 
 MIT
-

@@ -14,6 +14,7 @@ def test_loads_minimal_config_with_defaults(tmp_path):
     assert loaded.version == 1
     assert loaded.paths.include == ["**/*"]
     assert loaded.rules.max_new_files_per_task == 3
+    assert loaded.rules.fail_on_changed_file_growth is False
 
 
 def test_loads_full_config(tmp_path):
@@ -30,6 +31,7 @@ paths:
   exclude: [".git/**"]
 rules:
   max_new_files_per_task: 1
+  fail_on_changed_file_growth: true
 extension_points:
   - name: Exporters
     keywords: ["export"]
@@ -44,6 +46,7 @@ extension_points:
     assert loaded.project.non_goals == ["no cloud"]
     assert loaded.extension_points[0].name == "Exporters"
     assert loaded.rules.max_new_files_per_task == 1
+    assert loaded.rules.fail_on_changed_file_growth is True
 
 
 def test_missing_task_file_uses_goal_override(tmp_path):
@@ -59,4 +62,3 @@ def test_invalid_yaml_raises_clean_error(tmp_path):
 
     with pytest.raises(ConfigError):
         load_project_config(config)
-
