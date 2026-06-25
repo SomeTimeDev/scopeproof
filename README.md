@@ -26,8 +26,10 @@ for catching those signals before merge.
 
 ## Installation
 
+ScopeProof is not published to PyPI yet. Install the current GitHub version with:
+
 ```bash
-pip install scopeproof
+pip install git+https://github.com/SomeTimeDev/scopeproof.git
 ```
 
 For local development:
