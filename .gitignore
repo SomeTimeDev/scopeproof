@@ -1,8 +1,3 @@
-# Local Codex/project-instruction files that should not be published.
-/AGENTS.md
-/CODEX_START_PROMPT.md
-/SCOPEPROOF_CODEX_SPEC.md
-
 # Python/cache/build artifacts.
 __pycache__/
 *.py[cod]
@@ -18,4 +13,3 @@ build/
 # Local virtual environments.
 .venv/
 venv/
-
