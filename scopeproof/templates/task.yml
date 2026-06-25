@@ -1,0 +1,16 @@
+goal: "Describe the current coding task."
+
+allowed_paths: []
+
+prefer_modify: []
+
+forbidden_paths: []
+
+expected_change_type: null
+
+expected_behavior:
+  - "Prefer extending existing functions/classes over creating new modules."
+
+verification:
+  - "pytest -q"
+

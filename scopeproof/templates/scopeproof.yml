@@ -1,0 +1,44 @@
+version: 1
+
+project:
+  name: null
+  mission: "Describe the small, durable purpose of this repository."
+  non_goals:
+    - "Do not add cloud services unless explicitly requested."
+    - "Do not add a web UI unless explicitly requested."
+
+paths:
+  include:
+    - "src/**"
+    - "tests/**"
+    - "README.md"
+  exclude:
+    - ".git/**"
+    - ".venv/**"
+    - "venv/**"
+    - "node_modules/**"
+    - "dist/**"
+    - "build/**"
+    - "__pycache__/**"
+    - ".pytest_cache/**"
+
+rules:
+  max_changed_files_per_task: 12
+  max_new_files_per_task: 3
+  max_new_public_symbols_per_task: 6
+  duplicate_symbol_similarity: 0.82
+  fail_on_scope_escape: true
+  fail_on_module_sprawl: false
+  fail_on_duplicate_symbol: false
+  fail_on_orphan_new_file: false
+  fail_on_public_api_growth: false
+  require_adr_for_new_module: false
+  adr_paths:
+    - "docs/adr/*.md"
+    - "docs/architecture/*.md"
+
+extension_points: []
+
+architecture:
+  forbidden_imports: []
+

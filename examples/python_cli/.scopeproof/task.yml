@@ -1,0 +1,13 @@
+goal: "Add CSV export support"
+allowed_paths:
+  - "src/**/exporters/**"
+  - "tests/**"
+forbidden_paths:
+  - "src/**/services/**"
+prefer_modify:
+  - "src/example/exporters/base.py"
+expected_behavior:
+  - "Use the existing exporter interface."
+verification:
+  - "pytest -q"
+

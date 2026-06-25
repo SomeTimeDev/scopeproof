@@ -1,0 +1,21 @@
+version: 1
+project:
+  name: "python-cli-example"
+  mission: "A small CLI that parses files and exports structured data."
+  non_goals:
+    - "Do not add a web UI."
+    - "Do not add cloud sync."
+paths:
+  include:
+    - "src/**"
+    - "tests/**"
+    - "README.md"
+extension_points:
+  - name: "Exporters"
+    keywords: ["export", "csv", "json"]
+    prefer_existing_paths:
+      - "src/**/exporters/**"
+    allow_new_files_under:
+      - "src/**/exporters/**"
+      - "tests/**"
+
