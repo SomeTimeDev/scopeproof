@@ -40,6 +40,7 @@ def test_working_tree_diff_command_construction(monkeypatch, tmp_path):
     changed = get_changed_files("HEAD", None, tmp_path)
 
     assert captured[0][0] == ["diff", "--name-status", "--find-renames", "HEAD"]
+    assert captured[1][0] == ["ls-files", "--others", "--exclude-standard"]
     assert changed[0].path == "src/app.py"
 
 
@@ -81,6 +82,25 @@ def test_staged_diff_command_excludes_untracked(monkeypatch, tmp_path):
 
     assert captured == [["diff", "--name-status", "--find-renames", "--cached", "HEAD"]]
     assert [(item.status, item.path) for item in changed] == [("A", "src/staged.py")]
+
+
+def test_ref_to_ref_diff_excludes_untracked_by_default(monkeypatch, tmp_path):
+    captured = []
+
+    def fake_run_git(args, cwd):
+        captured.append(args)
+
+        class Completed:
+            stdout = "M\tsrc/ref_change.py\n"
+
+        return Completed()
+
+    monkeypatch.setattr("scopeproof.git._run_git", fake_run_git)
+
+    changed = get_changed_files("origin/main", "HEAD", tmp_path)
+
+    assert captured == [["diff", "--name-status", "--find-renames", "origin/main...HEAD"]]
+    assert [(item.status, item.path) for item in changed] == [("M", "src/ref_change.py")]
 
 
 def test_staged_diff_rejects_head_ref(tmp_path):

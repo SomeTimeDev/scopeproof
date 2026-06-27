@@ -89,9 +89,12 @@ def get_changed_files(
     base: str,
     head: str | None,
     cwd: Path,
-    include_untracked: bool = True,
+    include_untracked: bool | None = None,
     staged: bool = False,
 ) -> list[ChangedFile]:
+    if include_untracked is None:
+        include_untracked = head is None and not staged
+
     args = ["diff", "--name-status", "--find-renames"]
     if staged:
         if head:

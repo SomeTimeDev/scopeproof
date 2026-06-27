@@ -149,12 +149,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install scopeproof
+      - run: pip install git+https://github.com/SomeTimeDev/scopeproof.git
 
       - run: scopeproof check --base origin/main --head HEAD --format markdown --output scopeproof-report.md
 ```
 
-ScopeProof does not post PR comments in v0.1.1.
+ScopeProof does not post PR comments yet.
 
 ## Philosophy And Limitations
 
@@ -168,8 +168,8 @@ ScopeProof does not prove semantic correctness. It catches deterministic drift s
 - orphan new files
 - unexpected public API growth
 
-It only indexes Python with the standard library `ast` module in v0.1.1. Non-Python files can be
-checked for path scope, but not for symbol-level behavior.
+It currently indexes Python with the standard library `ast` module. Non-Python files can be checked
+for path scope, but not for symbol-level behavior.
 
 ## Roadmap
 
