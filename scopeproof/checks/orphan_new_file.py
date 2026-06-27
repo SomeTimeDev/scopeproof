@@ -30,7 +30,12 @@ def _import_references_file(path: str, imports: list[ImportEdge]) -> bool:
     return False
 
 
-def _test_references_file(repo_root: Path, path: str, symbols: list[Symbol]) -> bool:
+def _test_references_file(
+    repo_root: Path,
+    path: str,
+    symbols: list[Symbol],
+    test_sources: dict[str, str] | None,
+) -> bool:
     module_names = {suffix.split(".")[-1] for suffix in _module_suffixes(path)}
     symbol_names = {
         symbol.name
@@ -40,11 +45,22 @@ def _test_references_file(repo_root: Path, path: str, symbols: list[Symbol]) -> 
     needles = module_names | symbol_names
     if not needles:
         return False
-    for test_path in repo_root.rglob("tests/**/*.py"):
-        try:
-            source = test_path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
+    if test_sources is None:
+        sources = {}
+        for test_path in repo_root.rglob("tests/**/*.py"):
+            try:
+                sources[str(test_path.relative_to(repo_root)).replace("\\", "/")] = (
+                    test_path.read_text(encoding="utf-8")
+                )
+            except UnicodeDecodeError:
+                continue
+    else:
+        sources = {
+            source_path: source
+            for source_path, source in test_sources.items()
+            if source_path.startswith("tests/") and source_path.endswith(".py")
+        }
+    for source in sources.values():
         if any(needle in source for needle in needles):
             return True
     return False
@@ -56,6 +72,7 @@ def check_orphan_new_file(
     current_symbols: list[Symbol],
     repo_root: Path,
     fail_enabled: bool,
+    test_sources: dict[str, str] | None = None,
 ) -> object:
     issues: list[CheckIssue] = []
     for changed in added_files(changed_files):
@@ -65,7 +82,7 @@ def check_orphan_new_file(
             continue
         if _import_references_file(changed.path, imports):
             continue
-        if _test_references_file(repo_root, changed.path, current_symbols):
+        if _test_references_file(repo_root, changed.path, current_symbols, test_sources):
             continue
         issues.append(
             CheckIssue(

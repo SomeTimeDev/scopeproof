@@ -11,9 +11,10 @@ from scopeproof.checks.parse_error import check_parse_error
 from scopeproof.checks.public_api_growth import check_public_api_growth
 from scopeproof.checks.scope_escape import check_scope_escape
 from scopeproof.config import ProjectConfig, TaskConfig
-from scopeproof.git import get_changed_files, get_file_at_ref
-from scopeproof.indexer.python_ast import index_repo
+from scopeproof.git import get_changed_files, get_file_at_index, get_file_at_ref, list_tracked_files
+from scopeproof.indexer.python_ast import index_python_source, index_repo
 from scopeproof.models import FullReport
+from scopeproof.paths import filter_included
 
 
 def _base_sources_for_changed_files(
@@ -32,16 +33,51 @@ def _base_sources_for_changed_files(
     return sources
 
 
+def _staged_sources(
+    repo_root: Path,
+    config: ProjectConfig,
+    apply_path_filters: bool = True,
+) -> dict[str, str]:
+    selected = [path for path in list_tracked_files(repo_root) if path.endswith(".py")]
+    if apply_path_filters:
+        selected = filter_included(selected, config.paths.include, config.paths.exclude)
+    sources = {}
+    for path in selected:
+        source = get_file_at_index(path, repo_root)
+        if source is not None:
+            sources[path] = source
+    return sources
+
+
+def _index_sources(sources: dict[str, str]):
+    symbols = []
+    imports = []
+    for path, source in sources.items():
+        file_symbols, file_imports = index_python_source(source, path)
+        symbols.extend(file_symbols)
+        imports.extend(file_imports)
+    return symbols, imports
+
+
 def run_checks(
     repo_root: Path,
     config: ProjectConfig,
     task: TaskConfig,
     base: str,
     head: str | None,
+    staged: bool = False,
 ) -> FullReport:
-    changed_files = get_changed_files(base, head, repo_root)
-    parse_result = check_parse_error(changed_files, repo_root)
-    current_symbols, imports = index_repo(repo_root, config.paths.include, config.paths.exclude)
+    changed_files = get_changed_files(base, head, repo_root, staged=staged)
+    current_sources = _staged_sources(repo_root, config) if staged else None
+    parse_sources = (
+        _staged_sources(repo_root, config, apply_path_filters=False) if staged else None
+    )
+    parse_result = check_parse_error(changed_files, repo_root, sources=parse_sources)
+    current_symbols, imports = (
+        _index_sources(current_sources)
+        if current_sources is not None
+        else index_repo(repo_root, config.paths.include, config.paths.exclude)
+    )
     base_sources = _base_sources_for_changed_files(changed_files, base, repo_root)
     base_symbols = base_symbols_for_changed_files(changed_files, base_sources)
 
@@ -57,6 +93,7 @@ def run_checks(
             current_symbols,
             repo_root,
             config.rules.fail_on_orphan_new_file,
+            test_sources=current_sources,
         ),
         check_public_api_growth(changed_files, current_symbols, base_symbols, config),
     ]
@@ -68,4 +105,5 @@ def run_checks(
         head=head,
         changed_files=changed_files,
         results=results,
+        staged=staged,
     )

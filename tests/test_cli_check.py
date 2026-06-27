@@ -103,6 +103,50 @@ def test_cli_check_detects_untracked_new_python_module(tmp_path, monkeypatch):
     assert statuses["scope_escape"] == "FAIL"
 
 
+def test_cli_check_staged_ignores_untracked_files(tmp_path, monkeypatch):
+    init_repo(tmp_path)
+    write(tmp_path, "scopeproof.yml", demo_scopeproof_config())
+    write(tmp_path, ".scopeproof/task.yml", demo_task_config())
+    write(tmp_path, "src/demo/exporters/base.py", "class BaseExporter:\n    pass\n")
+    commit_all(tmp_path)
+    write(tmp_path, "src/demo/exporters/csv.py", "class CSVExporter:\n    pass\n")
+    run_git(tmp_path, "add", "src/demo/exporters/csv.py")
+    write(
+        tmp_path,
+        "src/demo/services/untracked_export_service.py",
+        "class UntrackedExportService:\n    pass\n",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(app, ["check", "--staged", "--format", "json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    changed_paths = [item["path"] for item in payload["changed_files"]]
+    assert changed_paths == ["src/demo/exporters/csv.py"]
+    statuses = {item["check_id"]: item["status"] for item in payload["results"]}
+    assert statuses["scope_escape"] == "PASS"
+
+
+def test_cli_check_staged_parses_index_content(tmp_path, monkeypatch):
+    init_repo(tmp_path)
+    write(tmp_path, "scopeproof.yml", "version: 1\n")
+    write(tmp_path, ".scopeproof/task.yml", "goal: Test staged parse\n")
+    write(tmp_path, "README.md", "base\n")
+    commit_all(tmp_path)
+    write(tmp_path, "src/broken.py", "def broken(:\n    pass\n")
+    run_git(tmp_path, "add", "src/broken.py")
+    write(tmp_path, "src/broken.py", "def fixed():\n    return True\n")
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(app, ["check", "--staged", "--format", "json"])
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    statuses = {item["check_id"]: item["status"] for item in payload["results"]}
+    assert statuses["parse_error"] == "FAIL"
+
+
 def test_cli_prompt_outputs_markdown(tmp_path, monkeypatch):
     write(tmp_path, "scopeproof.yml", demo_scopeproof_config())
     write(tmp_path, ".scopeproof/task.yml", demo_task_config())

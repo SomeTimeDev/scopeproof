@@ -59,6 +59,7 @@ class FullReport:
     head: str | None
     changed_files: list[ChangedFile]
     results: list[CheckResult]
+    staged: bool = False
 
     @property
     def overall_status(self) -> str:
@@ -67,4 +68,3 @@ class FullReport:
         if any(result.status == WARN for result in self.results):
             return WARN
         return PASS
-

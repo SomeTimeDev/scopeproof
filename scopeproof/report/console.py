@@ -5,12 +5,13 @@ from scopeproof.models import FullReport
 
 def render_console(report: FullReport, verbose: bool = False) -> str:
     added = sum(1 for item in report.changed_files if item.status in {"A", "C"})
+    diff_target = "staged index" if report.staged else report.head or "working tree"
     lines = [
         "ScopeProof Report",
         "",
         f"Project: {report.project_name or '-'}",
         f"Task: {report.task_goal or '-'}",
-        f"Diff: {report.base} -> {report.head or 'working tree'}",
+        f"Diff: {report.base} -> {diff_target}",
         "",
         f"Changed files: {len(report.changed_files)}",
         f"Added files: {added}",
@@ -34,4 +35,3 @@ def render_console(report: FullReport, verbose: bool = False) -> str:
         lines.append("")
     lines.append(f"Overall: {report.overall_status}")
     return "\n".join(lines).rstrip() + "\n"
-

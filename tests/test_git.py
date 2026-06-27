@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import pytest
+
+from scopeproof.errors import ScopeProofError
 from scopeproof.git import get_changed_files, parse_name_status
 
 
@@ -59,3 +62,27 @@ def test_get_changed_files_includes_untracked_and_deduplicates(monkeypatch, tmp_
         ("A", "src/new.py"),
         ("A", "src/other.py"),
     ]
+
+
+def test_staged_diff_command_excludes_untracked(monkeypatch, tmp_path):
+    captured = []
+
+    def fake_run_git(args, cwd):
+        captured.append(args)
+
+        class Completed:
+            stdout = "A\tsrc/staged.py\n"
+
+        return Completed()
+
+    monkeypatch.setattr("scopeproof.git._run_git", fake_run_git)
+
+    changed = get_changed_files("HEAD", None, tmp_path, staged=True)
+
+    assert captured == [["diff", "--name-status", "--find-renames", "--cached", "HEAD"]]
+    assert [(item.status, item.path) for item in changed] == [("A", "src/staged.py")]
+
+
+def test_staged_diff_rejects_head_ref(tmp_path):
+    with pytest.raises(ScopeProofError):
+        get_changed_files("origin/main", "HEAD", tmp_path, staged=True)

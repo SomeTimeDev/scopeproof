@@ -46,14 +46,23 @@ scopeproof prompt "Add CSV export support"
 scopeproof check --base HEAD
 ```
 
+To check exactly what is staged for the next commit:
+
+```bash
+git add .
+scopeproof check --staged
+```
+
 For stricter projects, start with fail-on defaults for every drift check:
 
 ```bash
 scopeproof init --strict
 ```
 
-Local checks include untracked files by default. A new untracked Python module is treated as an
-added file, so `scopeproof check --base HEAD` catches drift before you remember to run `git add`.
+Local working-tree checks include untracked files by default. A new untracked Python module is
+treated as an added file, so `scopeproof check --base HEAD` catches drift before you remember to
+run `git add`. Use `--staged` when you want to ignore unstaged/untracked experiments and check only
+the Git index.
 
 For pull requests:
 

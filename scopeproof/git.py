@@ -90,9 +90,19 @@ def get_changed_files(
     head: str | None,
     cwd: Path,
     include_untracked: bool = True,
+    staged: bool = False,
 ) -> list[ChangedFile]:
     args = ["diff", "--name-status", "--find-renames"]
-    if head:
+    if staged:
+        if head:
+            raise ScopeProofError(
+                "--staged cannot be combined with --head.",
+                suggestion="Use --staged with --base REF, or use --base/--head without --staged.",
+            )
+        args.append("--cached")
+        args.append(base)
+        include_untracked = False
+    elif head:
         args.append(f"{base}...{head}")
     else:
         args.append(base)
@@ -108,6 +118,21 @@ def get_file_at_ref(path: str, ref: str, cwd: Path) -> str | None:
     command_path = normalize_path(path)
     completed = subprocess.run(
         ["git", "show", f"{ref}:{command_path}"],
+        cwd=cwd,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if completed.returncode != 0:
+        return None
+    return completed.stdout
+
+
+def get_file_at_index(path: str, cwd: Path) -> str | None:
+    command_path = normalize_path(path)
+    completed = subprocess.run(
+        ["git", "show", f":{command_path}"],
         cwd=cwd,
         text=True,
         stdout=subprocess.PIPE,

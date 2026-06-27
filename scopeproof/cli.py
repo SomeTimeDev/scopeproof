@@ -239,17 +239,26 @@ def check_command(
         bool,
         typer.Option("--fail-on-warn", help="Exit 1 for WARN reports."),
     ] = False,
+    staged: Annotated[
+        bool,
+        typer.Option("--staged", help="Check only staged changes in the Git index."),
+    ] = False,
     verbose: Annotated[
         bool,
         typer.Option("--verbose", help="Show issue evidence."),
     ] = False,
 ) -> None:
-    """Run all v0.1.0 scope checks."""
+    """Run all scope checks."""
     try:
+        if staged and head:
+            raise ScopeProofError(
+                "--staged cannot be combined with --head.",
+                suggestion="Use --staged with --base REF, or use --base/--head without --staged.",
+            )
         repo_root = get_repo_root(Path.cwd())
         loaded_config = load_project_config(repo_root / config)
         loaded_task = load_task_config(repo_root / task, goal_override=goal)
-        report = run_checks(repo_root, loaded_config, loaded_task, base, head)
+        report = run_checks(repo_root, loaded_config, loaded_task, base, head, staged=staged)
     except (ScopeProofError, ConfigError) as exc:
         _exit_config_error(exc)
 
