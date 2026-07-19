@@ -37,12 +37,15 @@ def check_duplicate_symbol(
         changed_files=changed_files,
         current_symbols=current_symbols,
         base_symbols=base_symbols,
+        include_tests=False,
     )
     new_keys = {(symbol.path, symbol.kind, symbol.name, symbol.parent) for symbol in new_symbols}
     existing_symbols = [
         symbol
         for symbol in current_symbols
-        if symbol.is_public and (symbol.path, symbol.kind, symbol.name, symbol.parent) not in new_keys
+        if symbol.is_public
+        and not symbol.path.startswith("tests/")
+        and (symbol.path, symbol.kind, symbol.name, symbol.parent) not in new_keys
     ]
 
     for new_symbol in new_symbols:
@@ -87,4 +90,3 @@ def check_duplicate_symbol(
         issues=issues,
         fail_enabled=config.rules.fail_on_duplicate_symbol,
     )
-
