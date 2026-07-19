@@ -38,3 +38,19 @@ def test_duplicate_symbol_ignores_private_and_unrelated_symbols():
 
     assert result.status == PASS
 
+
+def test_duplicate_symbol_ignores_similar_test_functions():
+    current = [
+        Symbol("test_adds_two_numbers", "function", "tests/test_calculator.py", 4, True),
+        Symbol("test_subtracts_two_numbers", "function", "tests/test_calculator.py", 8, True),
+    ]
+
+    result = check_duplicate_symbol(
+        [ChangedFile("tests/test_calculator.py", "M")],
+        current,
+        [current[0]],
+        ProjectConfig(),
+    )
+
+    assert result.status == PASS
+    assert result.issues == []
