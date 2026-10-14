@@ -34,8 +34,14 @@ def result_from_issues(
     return CheckResult(check_id, title, severity, issue_summary, normalized)
 
 
+# ScopeProof's own config files are tool metadata, not project changes.
+SCOPEPROOF_METADATA_PATHS = ["scopeproof.yml", ".scopeproof/**"]
+
+
 def is_project_excluded(path: str, config: ProjectConfig) -> bool:
-    return matches_any(path, config.paths.exclude)
+    return matches_any(path, SCOPEPROOF_METADATA_PATHS) or matches_any(
+        path, config.paths.exclude
+    )
 
 
 def is_support_file(path: str) -> bool:
