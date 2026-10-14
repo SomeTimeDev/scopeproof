@@ -42,6 +42,22 @@ def test_cli_init_strict_enables_strict_fail_rules(tmp_path, monkeypatch):
     assert "fail_on_changed_file_growth: true" in config
 
 
+def test_cli_check_passes_right_after_init(tmp_path, monkeypatch):
+    init_repo(tmp_path)
+    write(tmp_path, "README.md", "# demo\n")
+    commit_all(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert runner.invoke(app, ["init"]).exit_code == 0
+
+    result = runner.invoke(app, ["check", "--format", "json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    statuses = {item["check_id"]: item["status"] for item in payload["results"]}
+    assert statuses["scope_escape"] == "PASS"
+    assert statuses["module_sprawl"] == "PASS"
+
+
 def test_cli_check_json_reports_core_sprawl_scenario(tmp_path, monkeypatch):
     init_repo(tmp_path)
     write(tmp_path, "scopeproof.yml", demo_scopeproof_config())

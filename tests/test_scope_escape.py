@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from scopeproof.checks.scope_escape import check_scope_escape
-from scopeproof.config import ProjectConfig, TaskConfig
+from scopeproof.config import PathConfig, ProjectConfig, TaskConfig
 from scopeproof.models import FAIL, PASS, ChangedFile
 
 
@@ -28,3 +28,16 @@ def test_scope_escape_passes_when_allowed_paths_empty():
 
     assert result.status == PASS
 
+
+
+def test_scope_escape_ignores_scopeproof_config_files():
+    result = check_scope_escape(
+        [
+            ChangedFile("scopeproof.yml", "A"),
+            ChangedFile(".scopeproof/task.yml", "M"),
+        ],
+        ProjectConfig(paths=PathConfig(include=["src/**"])),
+        TaskConfig(allowed_paths=["src/**/exporters/**"]),
+    )
+
+    assert result.status == PASS
