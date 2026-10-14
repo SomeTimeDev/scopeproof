@@ -26,7 +26,13 @@ for catching those signals before merge.
 
 ## Installation
 
-ScopeProof is not published to PyPI yet. Install the current GitHub version with:
+Install from [PyPI](https://pypi.org/project/scopeproof/) (Python 3.11+):
+
+```bash
+pip install scopeproof
+```
+
+To try the latest unreleased changes from GitHub:
 
 ```bash
 pip install git+https://github.com/SomeTimeDev/scopeproof.git
@@ -149,7 +155,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install git+https://github.com/SomeTimeDev/scopeproof.git
+      - run: pip install scopeproof
 
       - run: scopeproof check --base origin/main --head HEAD --format markdown --output scopeproof-report.md
 ```
